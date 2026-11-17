@@ -1,0 +1,49 @@
+{
+  "protocol": "claimforge/v1",
+  "epoch": 1,
+  "asset": "bch",
+  "assetCategory": "0000000000000000000000000000000000000000000000000000000000000000",
+  "depth": 4,
+  "root": "34bcd9ae9c67852106dfa3ce0aba63c72b4de076bc1a1d1592b0a7a42d5d4870",
+  "entitlements": [
+    {
+      "index": 0,
+      "label": "Alice",
+      "claimantPkh": "3bc28d6d92d9073fb5e3adf481795eaf446bceed",
+      "amount": "20000",
+      "leaf": "6e34af0df3dcc8b6c1f227c0042785bd4e464b69e4c25618578c2e8b655695ad",
+      "path": 0,
+      "siblings": [
+        "7f9c9e31ac8256ca2f258583df262dbc7d6f68f2a03043d5c99a4ae5a7396ce9",
+        "5fa70e62372cb48e82ca2bc99d1cfc32d998478238c6660c4b2559d1a6b49c31",
+        "15242b5e0e44976ad7a96f6f781c888326278670bb9fe8b40b60272fe6bdb647",
+        "82330b497b2a3708641a35f7348dda3d52feba858cd4fd770141e022c18948e3"
+      ]
+    },
+    {
+      "index": 3,
+      "label": "Bob",
+      "claimantPkh": "cc1b07838e387deacd0e5232e1e8b49f4c29e484",
+      "amount": "15000",
+      "leaf": "61d0828e1701b5818546b49668057e439b997722cf0eb0e89bd1ee60d13a631a",
+      "path": 3,
+      "siblings": [
+        "7f9c9e31ac8256ca2f258583df262dbc7d6f68f2a03043d5c99a4ae5a7396ce9",
+        "6a0cd9b3d0db7781990670ba4dc47688642cdd4f67af0ca36cd9e0580eded814",
+        "15242b5e0e44976ad7a96f6f781c888326278670bb9fe8b40b60272fe6bdb647",
+        "82330b497b2a3708641a35f7348dda3d52feba858cd4fd770141e022c18948e3"
+      ]
+    }
+  ],
+  "note": "Demo epoch. The private keys are public test keys. Do not fund them on mainnet.",
+  "holders": [
+    {
+      "label": "Alice",
+      "address": "bitcoincash:qqau9rtdjtvsw0a4uwklfqtet6h5g67wa5x6ptds2m"
+    },
+    {
+      "label": "Bob",
+      "address": "bitcoincash:qrxpkpur3cu8m6kdpefr9c0gkj05c20ysscuyrdr70"
+    }
+  ]
+}
