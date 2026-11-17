@@ -1,0 +1,16 @@
+{
+  "name": "claimforge",
+  "private": true,
+  "description": "BCH BLAZE 2026 — ClaimForge Merkle claims on Bitcoin Cash",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev": "pnpm --filter @bchblaze/identity build && pnpm --filter @bchblaze/claimforge dev",
+    "build": "pnpm --filter @bchblaze/identity build && pnpm --filter @bchblaze/claimforge build",
+    "test": "pnpm --filter @bchblaze/identity test",
+    "test:contracts": "pnpm --filter @bchblaze/contracts test",
+    "typecheck": "pnpm --filter @bchblaze/identity typecheck"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
