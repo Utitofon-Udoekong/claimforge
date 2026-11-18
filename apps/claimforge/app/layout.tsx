@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { HomeBanner } from "@/components/HomeBanner";
 import { Logo } from "@/components/Logo";
 import "./globals.css";
 
@@ -11,6 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <HomeBanner />
         <header className="border-b border-ink">
           <div className="mx-auto flex max-w-6xl items-end gap-5 px-6 py-8">
             <Logo className="h-14 w-14" />

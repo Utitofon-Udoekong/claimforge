@@ -29,12 +29,12 @@ The byte layout and the reject cases are in `packages/contracts/CLAIMFORGE.md`.
 ## Key features
 
 - **Published list.** The desk shows the root, the epoch, whether it pays Bitcoin Cash or FLDCH, and whether the published file matches that root.
-- **Your address.** Paste a cashaddr, pick Alice or Bob from the sample list, or connect Paytaca. Build proof shows the leaf and whether it matches.
+- **Your address.** Paste a mainnet cashaddr or connect Paytaca. Build proof shows the leaf and whether it matches.
 - **One payment.** The contract pays that leaf's amount to that locking script, once. A replay, a bad sibling, or the wrong key fails.
-- **Recorded payments.** Alice and Bob have mock-network transactions in the desk. They are not on a public explorer.
+- **Recorded payments.** Only a mainnet claim is shown. None is published yet.
 - **Same person on Nostr.** Paste a binding. It has to name this cashaddr. It does not pay anything.
 
-Alice and Bob use public test keys. Do not fund those cashaddrs on mainnet.
+The desk takes a mainnet cashaddr. Mock-network claim files are not shown.
 
 ## Tech stack
 
@@ -47,7 +47,7 @@ Alice and Bob use public test keys. Do not fund those cashaddrs on mainnet.
 | Tests | solidhat on the mock network: two claims, a replay, a bad sibling, a wrong key |
 | Package manager | pnpm 9.15, Node 18+ |
 
-No ClaimForge contract is deployed on mainnet or chipnet. The recorded payments exist on the SolidCash mock network.
+No ClaimForge contract is deployed on mainnet. A recorded payment appears on the desk only after a mainnet transaction is published.
 
 ## Hackathon requirements
 
@@ -60,7 +60,7 @@ No ClaimForge contract is deployed on mainnet or chipnet. The recorded payments 
 | Bitcoin Cash or a token category | 32 zero bytes, or the category id. FLDCH is documented in the protocol note |
 | A third party can check without the app | Rebuild the leaf, fold the siblings, inspect the paid output |
 | Optional link to a Nostr identity | Binding HASH160 must match the leaf. Coins do not move |
-| Working demo | `pnpm dev`, Alice and Bob on the desk |
+| Working demo | `pnpm dev`, paste a mainnet cashaddr, Build proof |
 
 ## Run
 
@@ -69,7 +69,7 @@ pnpm install
 pnpm dev
 ```
 
-Open http://localhost:3001. Choose Alice or Bob, then Build proof. The root check should read Matches.
+Open http://localhost:3001. The published root should read Matches. Paste a mainnet cashaddr and build a proof.
 
 Contract tests:
 

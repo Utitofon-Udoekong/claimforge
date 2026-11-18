@@ -125,7 +125,7 @@ export function ClaimDesk() {
         const claimResponse = await fetch("/last-claim.json");
         if (!claimResponse.ok) return;
         const claimBody: unknown = await claimResponse.json();
-        if (!cancelled && isLastClaim(claimBody)) setClaims(claimBody);
+        if (!cancelled && isLastClaim(claimBody) && claimBody.network === "mainnet") setClaims(claimBody);
       } catch {
         if (!cancelled) setClaims(null);
       }
@@ -161,6 +161,10 @@ export function ClaimDesk() {
       setProofError("ClaimForge leaves are P2PKH. Token-aware P2PKH is accepted. P2SH is not.");
       return;
     }
+    if (decoded.network !== "mainnet") {
+      setProofError("ClaimForge pays a mainnet cashaddr.");
+      return;
+    }
     const pkh = bytesToHex(decoded.hash);
     const entitlement = file.entitlements.find((entry) => entry.claimantPkh === pkh);
     if (entitlement === undefined) {
@@ -193,6 +197,10 @@ export function ClaimDesk() {
       decoded = decodeCashAddress(result.binding.statement.bchAddress);
     } catch (error) {
       setBindingNote(error instanceof Error ? error.message : String(error));
+      return;
+    }
+    if (decoded.network !== "mainnet") {
+      setBindingNote("The binding is valid, and its address is not mainnet.");
       return;
     }
     const same = bytesEqual(decoded.hash, hexToBytes(proof.entitlement.claimantPkh));
@@ -255,7 +263,7 @@ export function ClaimDesk() {
           <section className="border-t border-ink pt-5">
             <h2>Recorded payments</h2>
             {!claims ? (
-              <p className="mt-3 text-sm text-ink/60">None yet.</p>
+              <p className="mt-3 text-sm text-ink/60">None on mainnet yet.</p>
             ) : (
               <div className="mt-4 space-y-4">
                 {(recorded.length > 0 ? recorded : claims.claims).map((claim) => {
@@ -287,12 +295,7 @@ export function ClaimDesk() {
         <div className="mt-10 space-y-10 lg:mt-0">
           <section className="border-t border-ink pt-5">
             <h2>Your address</h2>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {file?.holders?.map((holder) => (
-                <button key={holder.address} type="button" className={quiet} onClick={() => setAddress(holder.address)}>
-                  {holder.label}
-                </button>
-              ))}
+            <div className="mt-4">
               <button
                 type="button"
                 className={quiet}
