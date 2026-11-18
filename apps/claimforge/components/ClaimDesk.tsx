@@ -10,9 +10,8 @@ import {
   verifyMerkleProof,
   type ClaimAsset,
 } from "@bchblaze/contracts";
-import { siteConfig } from "@/lib/config";
 import { copyText } from "@/lib/copy";
-import { connectPaytaca, paytacaInstalled } from "@/lib/paytaca";
+import { connectPaytaca } from "@/lib/paytaca";
 import {
   explorerUrl,
   type DistributionFile,
@@ -107,10 +106,8 @@ export function ClaimDesk() {
   const [proofError, setProofError] = useState<string | null>(null);
   const [bindingText, setBindingText] = useState("");
   const [bindingNote, setBindingNote] = useState<string | null>(null);
-  const [hasPaytaca, setHasPaytaca] = useState(false);
 
   useEffect(() => {
-    setHasPaytaca(paytacaInstalled());
     let cancelled = false;
     async function load() {
       try {
@@ -214,237 +211,150 @@ export function ClaimDesk() {
     return claims.claims.filter((claim) => claim.who === proof.entitlement.label);
   }, [claims, file, proof]);
 
+  const control = "mt-1 w-full border border-ink bg-paper px-3 py-2 font-mono text-xs";
+  const quiet = "border border-ink bg-paper px-3 py-1.5 text-sm hover:bg-ink hover:text-paper";
+
   return (
-    <div className="space-y-8">
-      <header className="max-w-3xl space-y-3">
-        <p className="text-xs font-medium uppercase tracking-[0.18em] text-bch-400">FoldingCash · SolidCash</p>
-        <h1 className="text-4xl text-white sm:text-5xl">ClaimForge</h1>
-        <p className="text-slate-300">
-          A publisher commits a Merkle root of who is owed what. Each claimant pulls their own output. The covenant
-          checks the proof, the signature, and the P2PKH lock, then marks that leaf spent.
+    <div>
+      <div>
+        <h1 className="max-w-xl">Pull your own payment from a published list.</h1>
+        <p className="lede">
+          A Merkle root names who is owed what. Paste your address, build the proof, and the contract pays that leaf once.
         </p>
-      </header>
+      </div>
 
-      <section className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <article className="rounded-2xl border border-white/10 bg-ink-900/80 p-5">
-          <h2 className="text-lg text-white">Published root</h2>
-          {loadError ? <p className="mt-3 text-sm text-rose-300">{loadError}</p> : null}
-          {file && loaded ? (
-            <dl className="mt-4 space-y-3 text-sm">
-              <div>
-                <dt className="text-slate-500">Root</dt>
-                <dd className="break-all font-mono text-xs text-bch-400">{file.root}</dd>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
+      <div className="mt-10 lg:grid lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-14">
+        <div className="space-y-10 lg:sticky lg:top-8">
+          <section className="border-t border-ink pt-5">
+            <h2>Published list</h2>
+            {loadError ? <p className="mt-3 text-sm">{loadError}</p> : null}
+            {file && loaded ? (
+              <dl className="mt-4 space-y-4 text-sm">
                 <div>
-                  <dt className="text-slate-500">Epoch</dt>
-                  <dd>{file.epoch}</dd>
+                  <dt className="text-xs uppercase tracking-wide text-ink/60">Root</dt>
+                  <dd className="mt-1 break-all font-mono text-xs">{file.root}</dd>
                 </div>
-                <div>
-                  <dt className="text-slate-500">Asset</dt>
-                  <dd>{file.asset === "bch" ? "BCH" : "FLDCH"}</dd>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-ink/60">Epoch</dt>
+                    <dd className="mt-1">{file.epoch}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-ink/60">Pays</dt>
+                    <dd className="mt-1">{file.asset === "bch" ? "Bitcoin Cash" : "FLDCH"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-ink/60">Check</dt>
+                    <dd className="mt-1">{loaded.matches ? "Matches" : "Mismatch"}</dd>
+                  </div>
                 </div>
-                <div>
-                  <dt className="text-slate-500">Depth</dt>
-                  <dd>{file.depth}</dd>
-                </div>
-              </div>
-              <div>
-                <dt className="text-slate-500">Recomputed in this page</dt>
-                <dd className={loaded.matches ? "text-bch-400" : "text-rose-300"}>
-                  {loaded.matches ? "Matches the published root and every sibling." : "Does not match. Proofs are disabled."}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-slate-500">FLDCH category, when this epoch pays the token</dt>
-                <dd className="break-all font-mono text-[11px] text-slate-300">{siteConfig.fldchCategory}</dd>
-              </div>
-              {file.note ? <p className="text-slate-400">{file.note}</p> : null}
-            </dl>
-          ) : null}
-        </article>
+              </dl>
+            ) : null}
+          </section>
 
-        <article className="rounded-2xl border border-white/10 bg-ink-900/80 p-5">
-          <h2 className="text-lg text-white">Claimant</h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Paste a cashaddr, or fill one of the published demo holders. Paytaca fills the connected address when the
-            extension is present.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {file?.holders?.map((holder) => (
+          <section className="border-t border-ink pt-5">
+            <h2>Recorded payments</h2>
+            {!claims ? (
+              <p className="mt-3 text-sm text-ink/60">None yet.</p>
+            ) : (
+              <div className="mt-4 space-y-4">
+                {(recorded.length > 0 ? recorded : claims.claims).map((claim) => {
+                  const href = explorerUrl(claims.network, claim.txid);
+                  return (
+                    <article key={claim.txid}>
+                      <p className="text-sm">
+                        {claim.who} · {claim.amountSats} sats
+                        {claims.network === "mock" ? " · mock network" : ""}
+                      </p>
+                      {href ? (
+                        <a href={href} target="_blank" rel="noreferrer" className="mt-1 block break-all font-mono text-xs">
+                          {claim.txid}
+                        </a>
+                      ) : (
+                        <p className="mt-1 break-all font-mono text-xs text-ink/70">{claim.txid}</p>
+                      )}
+                      <button type="button" className={`${quiet} mt-3`} onClick={() => void copyText(claim.hex)}>
+                        Copy transaction
+                      </button>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="mt-10 space-y-10 lg:mt-0">
+          <section className="border-t border-ink pt-5">
+            <h2>Your address</h2>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {file?.holders?.map((holder) => (
+                <button key={holder.address} type="button" className={quiet} onClick={() => setAddress(holder.address)}>
+                  {holder.label}
+                </button>
+              ))}
               <button
-                key={holder.address}
                 type="button"
-                className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-200 hover:border-bch-500/50"
-                onClick={() => setAddress(holder.address)}
+                className={quiet}
+                onClick={() => {
+                  void connectPaytaca()
+                    .then((connected) => {
+                      setAddress(connected);
+                      setWalletNote(null);
+                    })
+                    .catch((error: unknown) => {
+                      setWalletNote(error instanceof Error ? error.message : String(error));
+                    });
+                }}
               >
-                {holder.label}
+                Paytaca
               </button>
-            ))}
-            <button
-              type="button"
-              className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-200 hover:border-nostr-400/60"
-              onClick={() => {
-                void connectPaytaca()
-                  .then((connected) => {
-                    setAddress(connected);
-                    setWalletNote("Paytaca returned this address. The proof is still checked against the published root.");
-                  })
-                  .catch((error: unknown) => {
-                    setWalletNote(error instanceof Error ? error.message : String(error));
-                  });
-              }}
-            >
-              {hasPaytaca ? "Connect Paytaca" : "Connect Paytaca if installed"}
+            </div>
+            <label className="mt-4 block text-xs uppercase tracking-wide text-ink/60" htmlFor="cashaddr">
+              Cashaddr
+            </label>
+            <textarea
+              id="cashaddr"
+              value={address}
+              onChange={(event) => setAddress(event.target.value)}
+              rows={2}
+              className={control}
+              placeholder="bitcoincash:q…"
+            />
+            <button type="button" className="mt-3 bg-ink px-3 py-1.5 text-sm text-paper" onClick={() => buildProof(address)}>
+              Build proof
             </button>
-          </div>
-          <label className="mt-4 block text-xs text-slate-500" htmlFor="cashaddr">
-            Cashaddr
-          </label>
-          <textarea
-            id="cashaddr"
-            value={address}
-            onChange={(event) => setAddress(event.target.value)}
-            rows={2}
-            spellCheck={false}
-            className="mt-1 w-full rounded-xl border border-white/10 bg-ink-950 px-3 py-2 font-mono text-xs text-slate-100"
-            placeholder="bitcoincash:q…"
-          />
-          <button
-            type="button"
-            className="mt-3 rounded-xl bg-bch-500 px-4 py-2 text-sm font-medium text-ink-950 hover:bg-bch-400"
-            onClick={() => buildProof(address)}
-          >
-            Build proof
-          </button>
-          {walletNote ? <p className="mt-3 text-sm text-slate-300">{walletNote}</p> : null}
-          {proofError ? <p className="mt-3 text-sm text-rose-300">{proofError}</p> : null}
-        </article>
-      </section>
+            {walletNote ? <p className="mt-3 text-sm">{walletNote}</p> : null}
+            {proofError ? <p className="mt-3 text-sm">{proofError}</p> : null}
+          </section>
 
-      {proof && file ? (
-        <section className="rounded-2xl border border-bch-500/30 bg-ink-900/80 p-5">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-lg text-white">{proof.entitlement.label}</h2>
-              <p className="text-sm text-slate-400">
-                {proof.entitlement.amount} {assetUnit(file.asset)} · index {proof.entitlement.index} · path {proof.entitlement.path}
-              </p>
-            </div>
-            <p className={proof.verified ? "text-sm text-bch-400" : "text-sm text-rose-300"}>
-              {proof.verified ? "Local fold matches the published root." : "Local fold failed."}
-            </p>
-          </div>
-          <dl className="mt-4 space-y-3 text-xs">
-            <div>
-              <dt className="text-slate-500">Leaf</dt>
-              <dd className="break-all font-mono text-slate-200">{proof.entitlement.leaf}</dd>
-            </div>
-            {proof.entitlement.siblings.map((sibling, index) => (
-              <div key={`${index}-${sibling}`}>
-                <dt className="text-slate-500">Sibling {index}</dt>
-                <dd className="break-all font-mono text-slate-300">{sibling}</dd>
-              </div>
-            ))}
-          </dl>
-          <p className="mt-4 text-sm text-slate-400">
-            The covenant also requires a transaction signature from the key behind this cashaddr, and a payout output
-            locked to that same P2PKH script for this amount. This page does not hold that key.
-          </p>
-        </section>
-      ) : null}
+          {proof && file ? (
+            <section className="border-t border-ink pt-5">
+              <h2>
+                {proof.entitlement.label} · {proof.entitlement.amount} {assetUnit(file.asset)}
+              </h2>
+              <p className="mt-1 text-sm text-ink/70">{proof.verified ? "Proof matches the published root." : "Proof does not match."}</p>
+              <p className="mt-3 break-all font-mono text-xs text-ink/70">{proof.entitlement.leaf}</p>
+            </section>
+          ) : null}
 
-      <section className="rounded-2xl border border-white/10 bg-ink-900/80 p-5">
-        <h2 className="text-lg text-white">Transaction the covenant accepted</h2>
-        {!claims ? (
-          <p className="mt-3 text-sm text-slate-400">
-            No captured claim yet. The solidhat suite writes <span className="font-mono">public/last-claim.json</span> when
-            a valid claim pays.
-          </p>
-        ) : (
-          <div className="mt-3 space-y-4">
-            <p className="text-sm text-slate-300">{claims.note}</p>
-            <p className="text-xs text-slate-500">
-              Network <span className="font-mono text-slate-300">{claims.network}</span>
-              {claims.root === file?.root ? " · same root as the file above" : " · root differs from the loaded file"}
-            </p>
-            {(recorded.length > 0 ? recorded : claims.claims).map((claim) => {
-              const href = explorerUrl(claims.network, claim.txid);
-              return (
-                <article key={claim.txid} className="rounded-xl border border-white/10 p-4">
-                  <p className="text-sm text-white">
-                    {claim.who} · {claim.amountSats} sats
-                  </p>
-                  <p className="mt-2 break-all font-mono text-xs text-bch-400">{claim.txid}</p>
-                  {href ? (
-                    <a href={href} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm text-amber-200">
-                      Open on the explorer
-                    </a>
-                  ) : (
-                    <p className="mt-2 text-sm text-slate-400">
-                      Mock-network transaction. A block explorer will not find this txid. The hex is the transaction the
-                      Bitcoin Cash 2026 VM executed.
-                    </p>
-                  )}
-                  <button
-                    type="button"
-                    className="mt-3 rounded-lg border border-white/10 px-3 py-1 text-xs text-slate-200"
-                    onClick={() => {
-                      void copyText(claim.hex);
-                    }}
-                  >
-                    Copy raw transaction
-                  </button>
-                  <pre className="mt-3 max-h-32 overflow-auto whitespace-pre-wrap break-all font-mono text-[11px] text-slate-400">
-                    {claim.hex}
-                  </pre>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="rounded-2xl border border-white/10 bg-ink-900/80 p-5">
-        <h2 className="text-lg text-white">Bind the leaf to a Nostr key</h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Paste a bchblaze-id event or binding record. Verification is offline. The cashaddr inside the statement has to
-          be the same HASH160 as the leaf you just built.
-        </p>
-        <textarea
-          value={bindingText}
-          onChange={(event) => setBindingText(event.target.value)}
-          rows={5}
-          spellCheck={false}
-          className="mt-3 w-full rounded-xl border border-white/10 bg-ink-950 px-3 py-2 font-mono text-xs"
-          placeholder='{"kind":30734,...}'
-        />
-        <button
-          type="button"
-          className="mt-3 rounded-xl border border-nostr-400/40 px-4 py-2 text-sm text-slate-100"
-          onClick={checkBinding}
-        >
-          Verify binding
-        </button>
-        {bindingNote ? <p className="mt-3 text-sm text-slate-200">{bindingNote}</p> : null}
-      </section>
-
-      <section className="rounded-2xl border border-white/10 bg-ink-900/80 p-5 text-sm text-slate-300">
-        <h2 className="text-lg text-white">How a third party checks a claim</h2>
-        <ol className="mt-3 list-decimal space-y-2 pl-5">
-          <li>Read the root, epoch, and asset category from the contract data NFT, or from this published file after recomputing it.</li>
-          <li>
-            Leaf preimage, 65 bytes, little-endian amounts: <span className="font-mono text-xs">01 || pkh[20] || amount[8] || epoch[4] || category[32]</span>.
-            One SHA-256. BCH uses 32 zero bytes as the category. FLDCH uses {siteConfig.fldchCategory}.
-          </li>
-          <li>Fold four siblings. A set path bit means the node is the right child: hash sibling then node. A clear bit hashes node then sibling.</li>
-          <li>The payout output must be the standard P2PKH script for that hash, for that amount. The same leaf cannot be claimed again.</li>
-        </ol>
-        <p className="mt-3 text-slate-400">
-          The full note is <span className="font-mono">packages/contracts/CLAIMFORGE.md</span>. Run the covenant tests with{" "}
-          <span className="font-mono">pnpm --filter @bchblaze/contracts test</span>.
-        </p>
-      </section>
+          <section className="border-t border-ink pt-5">
+            <h2>Same person on Nostr</h2>
+            <p className="lede">Paste a binding. It has to name this same address. It does not move the coins.</p>
+            <textarea
+              value={bindingText}
+              onChange={(event) => setBindingText(event.target.value)}
+              rows={4}
+              className={control}
+              placeholder="Binding JSON"
+            />
+            <button type="button" className={`${quiet} mt-3`} onClick={checkBinding}>
+              Check binding
+            </button>
+            {bindingNote ? <p className="mt-3 text-sm">{bindingNote}</p> : null}
+          </section>
+        </div>
+      </div>
     </div>
   );
 }

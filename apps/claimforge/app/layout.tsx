@@ -1,41 +1,23 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Instrument_Serif, Outfit } from "next/font/google";
-import { Banner } from "@/components/Banner";
-import { siteConfig } from "@/lib/config";
+import { Logo } from "@/components/Logo";
 import "./globals.css";
 
-const sans = Outfit({
-  subsets: ["latin"],
-  variable: "--font-sans",
-});
-
-const display = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  variable: "--font-display",
-});
-
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
-});
-
 export const metadata: Metadata = {
-  title: "ClaimForge — pull a published FLDCH or BCH entitlement",
-  description:
-    "Pull-based Merkle claims on Bitcoin Cash. A SolidCash covenant checks the proof, marks the leaf spent, and pays the claimant.",
+  title: "ClaimForge",
+  description: "Pull a published Bitcoin Cash or FLDCH entitlement.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${sans.variable} ${display.variable} ${mono.variable}`}>
+    <html lang="en">
       <body>
-        <Banner />
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
-        <footer className="mx-auto max-w-6xl px-4 pb-10 text-xs text-slate-500 sm:px-6">
-          EMBER2026 {siteConfig.ember2026Address}
-        </footer>
+        <header className="border-b border-ink">
+          <div className="mx-auto flex max-w-6xl items-end gap-5 px-6 py-8">
+            <Logo className="h-14 w-14" />
+            <span className="text-2xl font-medium leading-none tracking-tight">ClaimForge</span>
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl px-6 py-10">{children}</main>
       </body>
     </html>
   );
