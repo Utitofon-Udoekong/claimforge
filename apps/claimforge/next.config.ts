@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@bchblaze/identity", "@bchblaze/contracts"],
+  transpilePackages: [
+    "@bchblaze/identity",
+    "@bchblaze/contracts",
+    "@wizardconnect/react",
+    "@wizardconnect/dapp",
+    "@wizardconnect/core",
+  ],
   webpack: (config) => {
     config.experiments = {
       ...config.experiments,

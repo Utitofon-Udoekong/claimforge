@@ -1,17 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { decodeCashAddress, isP2pkhType, verify } from "@bchblaze/identity";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { decodeCashAddress, isP2pkhType, normalizeCashAddress, verify } from "@bchblaze/identity";
 import {
   bytesEqual,
   bytesToHex,
+  claimLeaf,
   hexToBytes,
   publishDistribution,
-  verifyMerkleProof,
+  traceMerkleProof,
   type ClaimAsset,
 } from "@bchblaze/contracts";
 import { copyText } from "@/lib/copy";
-import { connectPaytaca } from "@/lib/paytaca";
+
+const WizardAddress = dynamic(
+  () => import("./WizardAddress").then((module) => module.WizardAddress),
+  { ssr: false },
+);
 import {
   explorerUrl,
   type DistributionFile,
@@ -25,10 +31,96 @@ interface LoadedDistribution {
   matches: boolean;
 }
 
-interface BuiltProof {
-  entitlement: PublishedEntitlementFile;
+interface FoldProof {
+  status: "folding" | "matched" | "mismatched";
   address: string;
-  verified: boolean;
+  entitlement: PublishedEntitlementFile;
+  steps: string[];
+  shown: number;
+  outcome: "matched" | "mismatched";
+}
+
+type ProofState =
+  | { status: "idle" }
+  | { status: "building" }
+  | { status: "error"; message: string }
+  | FoldProof;
+
+function normalizeHex(value: string): string {
+  const hex = value.trim().toLowerCase().replace(/^0x/, "");
+  if (!/^[0-9a-f]+$/.test(hex) || hex.length % 2 !== 0) {
+    throw new Error("Expected even-length hex");
+  }
+  return hex;
+}
+
+function evaluateProof(file: DistributionFile, nextAddress: string): ProofState {
+  let normalized: string;
+  try {
+    normalized = normalizeCashAddress(nextAddress.trim(), "mainnet");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { status: "error", message };
+  }
+  let decoded;
+  try {
+    decoded = decodeCashAddress(normalized);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { status: "error", message };
+  }
+  if (!isP2pkhType(decoded.type)) {
+    return { status: "error", message: "ClaimForge leaves are P2PKH. Token-aware P2PKH is accepted. P2SH is not." };
+  }
+  if (decoded.network !== "mainnet") {
+    return { status: "error", message: "ClaimForge pays a mainnet cashaddr." };
+  }
+  const pkh = bytesToHex(decoded.hash);
+  const entitlement = file.entitlements.find((entry) => normalizeHex(entry.claimantPkh) === pkh);
+  if (entitlement === undefined) {
+    return { status: "error", message: `No leaf in epoch ${file.epoch} pays ${pkh}` };
+  }
+  let siblings;
+  let publishedLeaf;
+  let root;
+  try {
+    siblings = entitlement.siblings.map((sibling) => hexToBytes(normalizeHex(sibling))) as [
+      Uint8Array,
+      Uint8Array,
+      Uint8Array,
+      Uint8Array,
+    ];
+    publishedLeaf = hexToBytes(normalizeHex(entitlement.leaf));
+    root = hexToBytes(normalizeHex(file.root));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { status: "error", message };
+  }
+  if (siblings.length !== 4) {
+    return { status: "error", message: "Proof must contain 4 siblings" };
+  }
+  let leaf: Uint8Array;
+  try {
+    leaf = claimLeaf(decoded.hash, BigInt(entitlement.amount), file.epoch, hexToBytes(normalizeHex(file.assetCategory)));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { status: "error", message };
+  }
+  let trace;
+  try {
+    trace = traceMerkleProof(leaf, siblings, entitlement.path, root, publishedLeaf);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { status: "error", message };
+  }
+  return {
+    status: "folding",
+    address: normalized,
+    entitlement,
+    steps: trace.steps.map((step) => bytesToHex(step.hash)),
+    shown: 1,
+    outcome: trace.status,
+  };
 }
 
 function assetUnit(asset: ClaimAsset): string {
@@ -102,8 +194,8 @@ export function ClaimDesk() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [address, setAddress] = useState("");
   const [walletNote, setWalletNote] = useState<string | null>(null);
-  const [proof, setProof] = useState<BuiltProof | null>(null);
-  const [proofError, setProofError] = useState<string | null>(null);
+  const [proof, setProof] = useState<ProofState>({ status: "idle" });
+  const proofGeneration = useRef(0);
   const [bindingText, setBindingText] = useState("");
   const [bindingNote, setBindingNote] = useState<string | null>(null);
 
@@ -138,52 +230,51 @@ export function ClaimDesk() {
 
   const file = loaded?.file;
 
+  useEffect(() => {
+    if (proof.status !== "folding") return;
+    if (proof.shown >= proof.steps.length) {
+      setProof({ ...proof, status: proof.outcome });
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setProof((current) => {
+        if (current.status !== "folding") return current;
+        return { ...current, shown: current.shown + 1 };
+      });
+    }, 320);
+    return () => window.clearTimeout(timer);
+  }, [proof]);
+
   function buildProof(nextAddress: string) {
-    setProof(null);
-    setProofError(null);
+    const generation = proofGeneration.current + 1;
+    proofGeneration.current = generation;
     setBindingNote(null);
     if (!loaded || !file) {
-      setProofError("The published root is not loaded");
+      setProof({ status: "error", message: "The published root is not loaded" });
       return;
     }
     if (!loaded.matches) {
-      setProofError("The published file does not recompute to its own root. Refusing to build a proof.");
+      setProof({
+        status: "error",
+        message: "The published file does not recompute to its own root. Refusing to build a proof.",
+      });
       return;
     }
-    let decoded;
-    try {
-      decoded = decodeCashAddress(nextAddress.trim());
-    } catch (error) {
-      setProofError(error instanceof Error ? error.message : String(error));
+    const next = evaluateProof(file, nextAddress);
+    if (next.status !== "folding") {
+      setProof(next);
       return;
     }
-    if (!isP2pkhType(decoded.type)) {
-      setProofError("ClaimForge leaves are P2PKH. Token-aware P2PKH is accepted. P2SH is not.");
-      return;
-    }
-    if (decoded.network !== "mainnet") {
-      setProofError("ClaimForge pays a mainnet cashaddr.");
-      return;
-    }
-    const pkh = bytesToHex(decoded.hash);
-    const entitlement = file.entitlements.find((entry) => entry.claimantPkh === pkh);
-    if (entitlement === undefined) {
-      setProofError(`No leaf in epoch ${file.epoch} pays ${pkh}`);
-      return;
-    }
-    const siblings = entitlement.siblings.map((sibling) => hexToBytes(sibling)) as [
-      Uint8Array,
-      Uint8Array,
-      Uint8Array,
-      Uint8Array,
-    ];
-    const verified = verifyMerkleProof(hexToBytes(entitlement.leaf), siblings, entitlement.path, hexToBytes(file.root));
-    setProof({ entitlement, address: nextAddress.trim(), verified });
+    setProof({ status: "building" });
+    window.setTimeout(() => {
+      if (proofGeneration.current !== generation) return;
+      setProof(next);
+    }, 40);
   }
 
   function checkBinding() {
     setBindingNote(null);
-    if (!proof) {
+    if (proof.status !== "matched" && proof.status !== "mismatched" && proof.status !== "folding") {
       setBindingNote("Build a proof before checking a binding.");
       return;
     }
@@ -194,7 +285,7 @@ export function ClaimDesk() {
     }
     let decoded;
     try {
-      decoded = decodeCashAddress(result.binding.statement.bchAddress);
+      decoded = decodeCashAddress(normalizeCashAddress(result.binding.statement.bchAddress, "mainnet"));
     } catch (error) {
       setBindingNote(error instanceof Error ? error.message : String(error));
       return;
@@ -214,7 +305,9 @@ export function ClaimDesk() {
   }
 
   const recorded = useMemo(() => {
-    if (!claims || !file || !proof) return [];
+    if (!claims || !file || (proof.status !== "matched" && proof.status !== "mismatched" && proof.status !== "folding")) {
+      return [];
+    }
     if (claims.root !== file.root) return [];
     return claims.claims.filter((claim) => claim.who === proof.entitlement.label);
   }, [claims, file, proof]);
@@ -296,22 +389,12 @@ export function ClaimDesk() {
           <section className="border-t border-ink pt-5">
             <h2>Your address</h2>
             <div className="mt-4">
-              <button
-                type="button"
-                className={quiet}
-                onClick={() => {
-                  void connectPaytaca()
-                    .then((connected) => {
-                      setAddress(connected);
-                      setWalletNote(null);
-                    })
-                    .catch((error: unknown) => {
-                      setWalletNote(error instanceof Error ? error.message : String(error));
-                    });
+              <WizardAddress
+                onAddress={(connected) => {
+                  setAddress(connected);
+                  setWalletNote(null);
                 }}
-              >
-                Paytaca
-              </button>
+              />
             </div>
             <label className="mt-4 block text-xs uppercase tracking-wide text-ink/60" htmlFor="cashaddr">
               Cashaddr
@@ -328,16 +411,26 @@ export function ClaimDesk() {
               Build proof
             </button>
             {walletNote ? <p className="mt-3 text-sm">{walletNote}</p> : null}
-            {proofError ? <p className="mt-3 text-sm">{proofError}</p> : null}
+            {proof.status === "error" ? <p className="mt-3 text-sm">{proof.message}</p> : null}
           </section>
 
-          {proof && file ? (
+          {file && (proof.status === "folding" || proof.status === "matched" || proof.status === "mismatched") ? (
             <section className="border-t border-ink pt-5">
               <h2>
                 {proof.entitlement.label} · {proof.entitlement.amount} {assetUnit(file.asset)}
               </h2>
-              <p className="mt-1 text-sm text-ink/70">{proof.verified ? "Proof matches the published root." : "Proof does not match."}</p>
-              <p className="mt-3 break-all font-mono text-xs text-ink/70">{proof.entitlement.leaf}</p>
+              <div className="mt-4 space-y-3">
+                {proof.steps.slice(0, proof.shown).map((step, index) => {
+                  const last = index === proof.steps.length - 1;
+                  const highlight = proof.status === "matched" && last;
+                  return (
+                    <p key={`${index}-${step}`} className={`break-all font-mono text-xs ${highlight ? "" : "text-ink/70"}`}>
+                      {step}
+                    </p>
+                  );
+                })}
+              </div>
+              {proof.status === "matched" ? <p className="mt-4 text-sm">Matches</p> : null}
             </section>
           ) : null}
 

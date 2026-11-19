@@ -18,6 +18,7 @@ export {
   claimLeaf,
   foldProof,
   hexToBytes,
+  traceMerkleProof,
   leafPreimage,
   padLeaf,
   sha256Bytes,
@@ -25,6 +26,8 @@ export {
   type BuiltClaimTree,
   type ClaimLeafInput,
   type MerkleProof,
+  type MerkleStep,
+  type MerkleTrace,
 } from "./merkle";
 
 export {

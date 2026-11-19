@@ -4,12 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001",
-    "build": "next build",
+    "build": "pnpm --filter @bchblaze/identity run build && next build",
     "start": "next start --port 3001"
   },
   "dependencies": {
     "@bchblaze/contracts": "workspace:*",
     "@bchblaze/identity": "workspace:*",
+    "@wizardconnect/core": "0.2.3",
+    "@wizardconnect/dapp": "0.2.3",
+    "@wizardconnect/react": "0.2.3",
     "next": "^15.1.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

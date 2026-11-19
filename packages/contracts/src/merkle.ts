@@ -181,18 +181,90 @@ function proofFor(index: number, levels: Uint8Array[][], leaf: Uint8Array): Merk
   return { index, leaf, siblings: [sibling0, sibling1, sibling2, sibling3], path };
 }
 
+export interface MerkleStep {
+  /** 0 is the leaf. 1–4 are the hashes after each sibling. */
+  depth: number;
+  hash: Uint8Array;
+}
+
+export interface MerkleTrace {
+  status: "matched" | "mismatched";
+  /** Steps up to and including the first failure. Later hashes are omitted. */
+  steps: MerkleStep[];
+  failedDepth: number | null;
+}
+
+function assertHash32(bytes: Uint8Array, label: string): void {
+  if (bytes.length !== 32) throw new Error(`${label} must be 32 bytes`);
+}
+
+function assertProofPath(path: number): void {
+  if (!Number.isInteger(path) || path < 0 || path >= LEAF_COUNT) {
+    throw new Error("Path must be an integer from 0 to 15");
+  }
+}
+
+function parentHash(node: Uint8Array, sibling: Uint8Array, path: number, depth: number): Uint8Array {
+  if (sibling.length !== 32) throw new Error("Sibling must be 32 bytes");
+  const onRight = (path & (1 << depth)) !== 0;
+  return sha256Bytes(onRight ? concat(sibling, node) : concat(node, sibling));
+}
+
+/**
+ * Fold a leaf through four siblings.
+ * `expectedLeaf` is the published leaf. A different candidate stops at depth 0.
+ * Each later step is kept only while it still matches the published leaf's fold.
+ * The last step also has to equal `root`.
+ */
+export function traceMerkleProof(
+  leaf: Uint8Array,
+  siblings: readonly [Uint8Array, Uint8Array, Uint8Array, Uint8Array],
+  path: number,
+  root: Uint8Array,
+  expectedLeaf?: Uint8Array,
+): MerkleTrace {
+  assertHash32(leaf, "Leaf");
+  assertHash32(root, "Root");
+  assertProofPath(path);
+  if (expectedLeaf !== undefined) assertHash32(expectedLeaf, "Expected leaf");
+
+  const leafStep: MerkleStep = { depth: 0, hash: leaf };
+  if (expectedLeaf !== undefined && !bytesEqual(leaf, expectedLeaf)) {
+    return { status: "mismatched", steps: [leafStep], failedDepth: 0 };
+  }
+
+  const steps: MerkleStep[] = [leafStep];
+  let node = leaf;
+  let expected = expectedLeaf ?? leaf;
+  for (let depth = 0; depth < PROOF_DEPTH; depth += 1) {
+    const sibling = siblings[depth];
+    if (sibling === undefined) throw new Error("Sibling must be 32 bytes");
+    node = parentHash(node, sibling, path, depth);
+    expected = parentHash(expected, sibling, path, depth);
+    const step: MerkleStep = { depth: depth + 1, hash: node };
+    steps.push(step);
+    const last = depth === PROOF_DEPTH - 1;
+    const diverged = !bytesEqual(node, expected) || (last && !bytesEqual(node, root));
+    if (diverged) {
+      return { status: "mismatched", steps, failedDepth: depth + 1 };
+    }
+  }
+  return { status: "matched", steps, failedDepth: null };
+}
+
 /** Recompute the root from a leaf and a proof. This is the off-chain half of the covenant check. */
 export function foldProof(
   leaf: Uint8Array,
   siblings: readonly [Uint8Array, Uint8Array, Uint8Array, Uint8Array],
   path: number,
 ): Uint8Array {
+  assertHash32(leaf, "Leaf");
+  assertProofPath(path);
   let node = leaf;
   for (let depth = 0; depth < PROOF_DEPTH; depth += 1) {
     const sibling = siblings[depth];
-    if (sibling === undefined || sibling.length !== 32) throw new Error("Sibling must be 32 bytes");
-    const onRight = (path & (1 << depth)) !== 0;
-    node = sha256Bytes(onRight ? concat(sibling, node) : concat(node, sibling));
+    if (sibling === undefined) throw new Error("Sibling must be 32 bytes");
+    node = parentHash(node, sibling, path, depth);
   }
   return node;
 }
@@ -203,5 +275,5 @@ export function verifyMerkleProof(
   path: number,
   root: Uint8Array,
 ): boolean {
-  return bytesEqual(foldProof(leaf, siblings, path), root);
+  return traceMerkleProof(leaf, siblings, path, root).status === "matched";
 }

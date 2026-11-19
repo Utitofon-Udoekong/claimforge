@@ -16,6 +16,15 @@ importers:
       '@bchblaze/identity':
         specifier: workspace:*
         version: link:../../packages/identity
+      '@wizardconnect/core':
+        specifier: 0.2.3
+        version: 0.2.3(typescript@5.9.3)
+      '@wizardconnect/dapp':
+        specifier: 0.2.3
+        version: 0.2.3(typescript@5.9.3)
+      '@wizardconnect/react':
+        specifier: 0.2.3
+        version: 0.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)
       next:
         specifier: ^15.1.0
         version: 15.5.29(@types/node@22.20.5)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -97,6 +106,15 @@ packages:
   '@alloc/quick-lru@5.3.0':
     resolution: {integrity: sha512-U4+70Pc5ZS9osnCBCE5Jha/ciHM+Yp+CNMNC/7HvYbNRk1Ldd+f7qO65W5qfhu/TCv+/ozljlXXe9Nj8419DMA==}
     engines: {node: '>=10'}
+
+  '@bch-wc2/interfaces@0.0.8':
+    resolution: {integrity: sha512-gRt95azHVqoViGI4X3F1ObgTpYBh3//KaCHRBWSMJbAKNM09T+TA/h9kx9u9SZmE8otMtpFSy4awSHWHUQZmbg==}
+    peerDependencies:
+      '@bitauth/libauth': ^3.1.0-next.2
+
+  '@bitauth/libauth@3.1.0-next.8':
+    resolution: {integrity: sha512-Pm+Ju+YP3JeBLLTiVrBnia2wwE4G17r4XqpvPRMcklElJTe8J6x3JgKRg1by0Xm3ZY6UFxACkEAoSA+x419/zA==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   '@bitauth/libauth@https://codeload.github.com/mainnet-pat/libauth/tar.gz/1cf4b432864b3a4ed9f33d1992355d7286f3dab8':
     resolution: {tarball: https://codeload.github.com/mainnet-pat/libauth/tar.gz/1cf4b432864b3a4ed9f33d1992355d7286f3dab8}
@@ -966,6 +984,18 @@ packages:
   '@vitest/utils@3.2.7':
     resolution: {integrity: sha512-x6BDOd7dyo3PFLY3I9/HJ25X/6OurhGXk2/B9gOZNPF7XDVjeBK4k01lQE5uvDpbuheErh91qYuE1E2OEjK3Rw==}
 
+  '@wizardconnect/core@0.2.3':
+    resolution: {integrity: sha512-mOWgnKDOsI8w4QHIemRh9F/KhbuCNRxlnWeuFM/bSVVXHpJjjC5m91RYXNTnnMe+j5VgaH0r1fd2/gVG/WgB7Q==}
+
+  '@wizardconnect/dapp@0.2.3':
+    resolution: {integrity: sha512-sMJwgFMG+M5XPxj6nPQ7IRwH5q2h2hjwsrx7R+xmaSNzDIaU+VQEVpRFMDSem1QX2gzsHnofgcYUPAdPpFBm3A==}
+
+  '@wizardconnect/react@0.2.3':
+    resolution: {integrity: sha512-xJ2K7WVbsPWdPt+1tRn3LSyGtruJY0F/CNuzeyASfwmswz8ANQB8UIMDuYg5elhDfHmYVHEKKH3hSBQZ5LvOtg==}
+    peerDependencies:
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+
   aes-js@4.0.0-beta.5:
     resolution: {integrity: sha512-G965FqalsNyrPqgEGON7nIx1e/OVENSgiEIzyC63haUMuvNnwIgIjMs52hlTCKhkBny7A2ORNlfY9Zu+jmGk1Q==}
 
@@ -1179,6 +1209,11 @@ packages:
     resolution: {integrity: sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==}
     engines: {node: '>=0.12.0'}
 
+  isomorphic-ws@5.0.0:
+    resolution: {integrity: sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==}
+    peerDependencies:
+      ws: '*'
+
   jiti@1.21.7:
     resolution: {integrity: sha512-/imKNG4EbWNrVjoNC/1H5/9GFy+tqjGBHCaSsN+P2RnPqjsLmv6UD3Ej+Kj8nBWaRAwyk7kK5ZUc+OEatnTR3A==}
     hasBin: true
@@ -1354,6 +1389,9 @@ packages:
   postcss@8.5.33:
     resolution: {integrity: sha512-RVHEU9/Pp1Fnjr/MpAJsZoADukCKhfIi15OunEYiGktIkYLkPVvC1sioWolGDS7XByMTx9m/IGbro0Js13zhnQ==}
     engines: {node: ^10 || ^12 || >=14}
+
+  qrcode-generator@1.5.2:
+    resolution: {integrity: sha512-pItrW0Z9HnDBnFmgiNrY1uxRdri32Uh9EjNYLPVC2zZ3ZRIIEqBoDgm4DkvDwNNDHTK7FNkmr8zAa77BYc9xNw==}
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -1689,6 +1727,12 @@ snapshots:
   '@adraffy/ens-normalize@1.11.1': {}
 
   '@alloc/quick-lru@5.3.0': {}
+
+  '@bch-wc2/interfaces@0.0.8(@bitauth/libauth@3.1.0-next.8)':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+
+  '@bitauth/libauth@3.1.0-next.8': {}
 
   '@bitauth/libauth@https://codeload.github.com/mainnet-pat/libauth/tar.gz/1cf4b432864b3a4ed9f33d1992355d7286f3dab8': {}
 
@@ -2390,6 +2434,44 @@ snapshots:
       loupe: 3.2.1
       tinyrainbow: 2.0.0
 
+  '@wizardconnect/core@0.2.3(typescript@5.9.3)':
+    dependencies:
+      '@bch-wc2/interfaces': 0.0.8(@bitauth/libauth@3.1.0-next.8)
+      '@bitauth/libauth': 3.1.0-next.8
+      eventemitter3: 5.0.4
+      isomorphic-ws: 5.0.0(ws@8.23.0)
+      lossless-json: 4.3.3
+      nostr-tools: 2.26.1(typescript@5.9.3)
+      ws: 8.23.0
+    transitivePeerDependencies:
+      - bufferutil
+      - nostr-wasm
+      - typescript
+      - utf-8-validate
+
+  '@wizardconnect/dapp@0.2.3(typescript@5.9.3)':
+    dependencies:
+      '@wizardconnect/core': 0.2.3(typescript@5.9.3)
+      eventemitter3: 5.0.4
+    transitivePeerDependencies:
+      - bufferutil
+      - nostr-wasm
+      - typescript
+      - utf-8-validate
+
+  '@wizardconnect/react@0.2.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.9.3)':
+    dependencies:
+      '@wizardconnect/core': 0.2.3(typescript@5.9.3)
+      '@wizardconnect/dapp': 0.2.3(typescript@5.9.3)
+      qrcode-generator: 1.5.2
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+    transitivePeerDependencies:
+      - bufferutil
+      - nostr-wasm
+      - typescript
+      - utf-8-validate
+
   aes-js@4.0.0-beta.5: {}
 
   antlr4@4.13.2: {}
@@ -2624,6 +2706,10 @@ snapshots:
 
   is-number@7.0.0: {}
 
+  isomorphic-ws@5.0.0(ws@8.23.0):
+    dependencies:
+      ws: 8.23.0
+
   jiti@1.21.7: {}
 
   js-tokens@4.0.0: {}
@@ -2763,6 +2849,8 @@ snapshots:
       nanoid: 3.3.20
       picocolors: 1.1.1
       source-map-js: 1.2.2
+
+  qrcode-generator@1.5.2: {}
 
   queue-microtask@1.2.3: {}
 
