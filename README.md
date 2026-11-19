@@ -2,9 +2,11 @@
 
 ![ClaimForge](apps/claimforge/public/logo.jpg)
 
-Pull your own payment from a published list. A Merkle root names who is owed what. The contract pays that leaf once, to that person, and nobody else can redirect it.
+Template: https://docs.google.com/presentation/d/1kT37urbtxSLAx9E-jGBGZJXKZHLZGY8nc_xgxkrcovc/edit?usp=sharing
+github: https://github.com/Utitofon-Udoekong/claimforge
+cashtokenaddress: bitcoincash:zq5hh46r4kudjpsayg58gu99h03p00nw4csaumqgy0
 
-Repository: https://github.com/Utitofon-Udoekong/claimforge
+Pull your own payment from a published list. A Merkle root names who is owed what. The contract pays that leaf once, to that person, and nobody else can redirect it.
 
 ## The problem
 
@@ -61,6 +63,7 @@ No ClaimForge contract is deployed on mainnet. A recorded payment appears on the
 | A third party can check without the app | Rebuild the leaf, fold the siblings, inspect the paid output |
 | Optional link to a Nostr identity | Binding HASH160 must match the leaf. Coins do not move |
 | Working demo | `pnpm dev`, paste a mainnet cashaddr, Build proof |
+| Top-of-page banner | Presentation, GitHub, and the EMBER2026 address |
 
 ## Run
 
