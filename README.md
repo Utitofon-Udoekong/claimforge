@@ -5,7 +5,7 @@
 Template: https://docs.google.com/presentation/d/1kT37urbtxSLAx9E-jGBGZJXKZHLZGY8nc_xgxkrcovc/edit?usp=sharing
 github: https://github.com/Utitofon-Udoekong/claimforge
 site: https://claimforge-drab.vercel.app/
-cashtokenaddress: bitcoincash:zq5hh46r4kudjpsayg58gu99h03p00nw4csaumqgy0
+cashtokenaddress: bitcoincash:zrf7lfu7ec657h69me9wm8ye04w36nxfzy6jdvqeqd
 
 Pull your own payment from a published list. A Merkle root names who is owed what. The contract pays that leaf once, to that person, and nobody else can redirect it.
 

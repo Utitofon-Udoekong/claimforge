@@ -1,6 +1,6 @@
 const PRESENTATION = "https://docs.google.com/presentation/d/1kT37urbtxSLAx9E-jGBGZJXKZHLZGY8nc_xgxkrcovc/edit?usp=sharing";
 const GITHUB = "https://github.com/Utitofon-Udoekong/claimforge";
-const EMBER = "bitcoincash:zq5hh46r4kudjpsayg58gu99h03p00nw4csaumqgy0";
+const EMBER = "bitcoincash:zrf7lfu7ec657h69me9wm8ye04w36nxfzy6jdvqeqd";
 
 export function HomeBanner() {
   return (
